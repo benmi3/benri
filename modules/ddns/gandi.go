@@ -28,16 +28,17 @@ func GandiUpdate(client *http.Client) string {
 	return string(body)
 
 }
-func example() {
-	resp, err := client.Get("http://example.co")
-	// ...
 
-	req, err := http.NewRequest("GET", "http://example.com", nil)
-	// ...
-	req.Header.Add("If-None-Match", `W/"wyzzy"`)
-	resp, err := client.Do(req)
-	// ...
-}
+//	func example() {
+//		resp, err := client.Get("http://example.co")
+//		// ...
+//
+//		req, err := http.NewRequest("GET", "http://example.com", nil)
+//		// ...
+//		req.Header.Add("If-None-Match", `W/"wyzzy"`)
+//		resp, err := client.Do(req)
+//		// ...
+//	}
 func GandiList(client *http.Client) string {
 
 	url := "https://api.gandi.net/v5/livedns/domains/example.com/records/www"
