@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	"gitlab.com/benmi/benri/modules/ddns"
 	"gopkg.in/yaml.v3"
 )
 
@@ -25,20 +26,8 @@ type T struct {
 	}
 }
 
-type DnsRecord struct {
-	Name string
-	A    bool
-	AAAA bool
-}
-
-type DdnsSettings struct {
-	Service string
-	AuthKey string
-	Record  []DnsRecord
-}
-
 type Conf struct {
-	Ddns []DdnsSettings
+	Ddns []ddns.DdnsSettings
 }
 
 func readFile(filename string) ([]byte, error) {
