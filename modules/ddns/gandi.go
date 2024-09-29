@@ -18,27 +18,18 @@ func GandiUpdate(client *http.Client) string {
 	req.Header.Add("authorization", "Bearer pat_abc-123")
 	req.Header.Add("content-type", "application/json")
 
-	res, _ := client.Do(req)
+	res, err := client.Do(req)
+	if err != nil {
+		// Handle error that actually could happen
+	}
 
 	defer res.Body.Close()
 	body, _ := io.ReadAll(res.Body)
 
-	//fmt.Println(res)
-	//fmt.Println(string(body))
 	return string(body)
 
 }
 
-//	func example() {
-//		resp, err := client.Get("http://example.co")
-//		// ...
-//
-//		req, err := http.NewRequest("GET", "http://example.com", nil)
-//		// ...
-//		req.Header.Add("If-None-Match", `W/"wyzzy"`)
-//		resp, err := client.Do(req)
-//		// ...
-//	}
 func GandiList(client *http.Client) string {
 
 	url := "https://api.gandi.net/v5/livedns/domains/example.com/records/www"
@@ -47,13 +38,13 @@ func GandiList(client *http.Client) string {
 
 	req.Header.Add("authorization", "Bearer pat_abc-123")
 
-	res, _ := client.Do(req)
+	res, err := client.Do(req)
+	if err != nil {
+		// Handle error that actually could happen
+	}
 
 	defer res.Body.Close()
 	body, _ := io.ReadAll(res.Body)
-
-	//fmt.Println(res)
-	//fmt.Println(string(body))
 
 	return string(body)
 
