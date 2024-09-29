@@ -10,22 +10,25 @@ import (
 )
 
 type DnsRecord struct {
+	Domain string
 	Name string
 	A    bool
 	AAAA bool
+	Ttl int
 }
 
-type DdnsSettings struct {
-	Service string
-	AuthKey string
-	Record  []DnsRecord
-}
-type IpMemory struct {
+type CurIp struct {
 	ipv4 string
 	ipv6 string
 }
 
-var currentIPs IpMemory
+type DdnsSettings struct {
+	Service    string
+	AuthKey    string
+	CurrentIPS CurIp
+	Record   []DnsRecord
+	client     *http.Client
+}
 
 func getBodyOfThis(client *http.Client, url string) (string, error) {
 	request, err := http.NewRequest("GET", url, nil)
@@ -68,25 +71,28 @@ func getIP(client *http.Client, ipv4 bool, ipv6 bool) (string, string) {
 	return ipv4_address, ipv6_address
 }
 
-func Ddns() error {
-	// Not sure
-	qjar, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
-	if err != nil {
-		log.Fatal(err)
-	}
 
-	client := &http.Client{
-		Jar: qjar,
+func new(httpClient *http.httpClient) DdnsSettings {
+	// Want to not keep needing to recreate http clients
+	// so will add pointer to struct
+	// This way, its easier to set up if I want to record
+	// cookies or not later
+	this := DdnsSettings{
+		client: httpClient
 	}
+	return this
+}
 
-	ipv4, ipv6 := getIP(client, true, true)
+func (ds *DdnsSettings)Ddns() error {
+	
+	ipv4, ipv6 := getIP(ds.client, true, true)
 	if ipv4 == currentIPs.ipv4 && ipv6 == currentIPs.ipv6 {
 		return nil
 	}
 
 	// TODO: Create a good logic that if the ipadress has not changed, dont try to update
 
-	GandiUpdate(client)
+	GandiUpdate(ds.client)
 
 	//CloudflareUpdate()
 	return nil
