@@ -10,11 +10,12 @@ import (
 )
 
 type DnsRecord struct {
-	Domain string
-	Name string
-	A    bool
-	AAAA bool
-	Ttl int
+	Domain     string
+	Name       string
+	A          bool
+	AAAA       bool
+	CNAME      string
+	Ttl        int
 	CurrentIPS CurIp // Save set IP adress for check later
 }
 
@@ -24,11 +25,12 @@ type CurIp struct {
 }
 
 type DdnsSettings struct {
-	Service    string
-	AuthKey    string
-	CurrentIPS CurIp
-	Record   []DnsRecord
-	client     *http.Client
+	Service     string
+	AuthKey     string
+	CurrentIPS  CurIp
+	RecordCount int8
+	Record      []DnsRecord
+	client      *http.Client
 }
 
 func getBodyOfThis(client *http.Client, url string) (string, error) {
@@ -72,34 +74,33 @@ func getIP(client *http.Client, ipv4 bool, ipv6 bool) (string, string) {
 	return ipv4_address, ipv6_address
 }
 
-
-func new(httpClient *http.httpClient) DdnsSettings {
+func new(httpClient *http.Client) DdnsSettings {
 	// Want to not keep needing to recreate http clients
 	// so will add pointer to struct
 	// This way, its easier to set up if I want to record
 	// cookies or not later
 	this := DdnsSettings{
-		client: httpClient
+		client: httpClient,
 	}
 	return this
 }
 
-func (ds *DdnsSettings)Ddns() error {
-	
+func (ds *DdnsSettings) Ddns() error {
+
 	ipv4, ipv6 := getIP(ds.client, true, true)
-	if ipv4 == currentIPs.ipv4 && ipv6 == currentIPs.ipv6 {
+	if ipv4 == ds.CurrentIPS.ipv4 && ipv6 == ds.CurrentIPS.ipv6 {
 		return nil
 	}
 
 	// TODO: Create a good logic that if the ipadress has not changed, dont try to update
 
-	GandiUpdate(ds.client)
+	ds.GandiUpdate(0, "AAAA")
 
 	//CloudflareUpdate()
 	return nil
 }
 
-func main() {
+func Test() {
 	// Not sure
 	qjar, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
 	if err != nil {
@@ -112,13 +113,8 @@ func main() {
 
 	// TODO: Create a good logic that if the ipadress has not changed, dont try to update
 
-	//req, err := http.NewRequest("GET", "http://example.com", nil)
-	// ...
-	//req.Header.Add("If-None-Match", `W/"wyzzy"`)
-	//resp, err := client.Do(req)
-	// ...
-
-	GandiUpdate(client)
+	ds := new(client)
+	ds.GandiUpdate(1, "A")
 
 	//CloudflareUpdate()
 
