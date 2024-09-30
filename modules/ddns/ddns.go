@@ -15,6 +15,7 @@ type DnsRecord struct {
 	A    bool
 	AAAA bool
 	Ttl int
+	CurrentIPS CurIp // Save set IP adress for check later
 }
 
 type CurIp struct {
