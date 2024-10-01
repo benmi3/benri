@@ -72,14 +72,17 @@ func (ds *DdnsSettings) GandiUpdateSingelByType(itemNum int, rrset_type string) 
 	return ds.GandiSingelByType(itemNum, rrset_type, "PUT")
 }
 
-func (ds *DdnsSettings) GandiUpdateMultipleByDomain(domain, payloadString, authToken string) int {
+func (ds *DdnsSettings) GandiUpdateMultipleByDomain(domain, payloadString, authToken string) (int, error) {
 	//url := "https://api.gandi.net/v5/livedns/domains/example.com/records"
 	url := fmt.Sprintf("https://api.gandi.net/v5/livedns/domains/%s/records", domain)
 
 	payload := strings.NewReader(payloadString)
 
 	// Creating domains is limited to one, so this will only be PUT anyway
-	req, _ := http.NewRequest("PUT", url, payload)
+	req, err := http.NewRequest("PUT", url, payload)
+	if err != nil {
+		return 0, err
+	}
 
 	// Remember that the new Api tokens in gandi are scoped
 	// This encreases the failure by 403 if mis-configured
@@ -89,10 +92,10 @@ func (ds *DdnsSettings) GandiUpdateMultipleByDomain(domain, payloadString, authT
 
 	res, err := ds.client.Do(req)
 	if err != nil {
-		// Handle error that actually could happen
-		return "500 Internal ERROR"
+		return 0, err
 	}
-	return res.StatusCode
+
+	return res.StatusCode, nil
 
 	// defer res.Body.Close()
 	// body, _ := io.ReadAll(res.Body)
@@ -131,37 +134,38 @@ func (ds *DdnsSettings) GandiUpdateAll() (int, error) {
 	var needUpdate bool
 
 	authToken := fmt.Sprintf("Bearer %s", ds.AuthKey)
-	
+
 	for i := 0; i < int(ds.RecordCount); i++ {
 		// TODO: make this logic perfect
 		needUpdate = false
 		payloadFormat := "{\"items\":[\"%s\"]}"
 		payloadStr := ""
-		if ds.Record[i].A  && ds.CurrentIPS.ipv4 != ds.Record[i].CurrentIPS.ipv4{
+		payloadString := ""
+		if ds.Record[i].A && ds.CurrentIPS.ipv4 != ds.Record[i].CurrentIPS.ipv4 {
 			needUpdate = true
 			payloadStr = fmt.Sprintf("{\"rrset_name\":\"A\",\"rrset_values\":[\"%s\"],\"rrset_ttl\":%d}", ds.CurrentIPS.ipv4, ds.Record[i].Ttl)
 
 		}
-		if ds.Record[i].AAAA && ds.CurrentIPS.ipv6 != ds.Record[i].CurrentIPS.ipv6{
+		if ds.Record[i].AAAA && ds.CurrentIPS.ipv6 != ds.Record[i].CurrentIPS.ipv6 {
 			aaaaRecord := fmt.Sprintf("{\"rrset_name\":\"AAAA\",\"rrset_values\":[\"%s\"],\"rrset_ttl\":%d}", ds.CurrentIPS.ipv6, ds.Record[i].Ttl)
 			if !needUpdate {
 				needUpdate = true
 				payloadStr = aaaaRecord
 			} else {
-				payloadStr = append(payloadStr, ",")
-				payloadStr = append(payloadStr, aaaaRecord)
+				payloadStr = payloadStr + "," + aaaaRecord
 			}
 		}
-		payloadString := fmt.Sprintf(payloadFormat, payloadStr)
-		 if needUpdate {
+		payloadString = fmt.Sprintf(payloadFormat, payloadStr)
+		if needUpdate {
 			// Execute update logic
 			// Else skip and refresh
-			retStatusCode := GandiUpdateMultipleByDomain(ds.Record[i].Domain, strings.NewReader(payloadString), authToken)
+			payload := strings.NewReader(payloadString)
+			retStatusCode, err := ds.GandiUpdateMultipleByDomain(ds.Record[i].Domain, payload, authToken)
 			if retStatusCode == 200 {
 				// For now, the main logic will be
 				// If the ip in the record is the same as main setting
 				// it has been updated
-				ds.Record[i].CurrentIPS = ds.Record.CurrentIPS
+				ds.Record[i].CurrentIPS = ds.CurrentIPS
 			} else {
 				// As the domain ips should be checked before we send the update request
 				// There should only be 200 returned

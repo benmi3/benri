@@ -25,13 +25,14 @@ type CurIp struct {
 }
 
 type DdnsSettings struct {
-	Service     string
-	AuthKey     string
-	CurrentIPS  CurIp
-	RecordCount int8
-	Record      []DnsRecord
-	client      *http.Client
+	Service           string
+	AuthKey           string
+	CurrentIPS        CurIp
+	RecordCount       int8
+	Record            []DnsRecord
+	client            *http.Client
 	AutoCnameCreation bool
+	AutoCnameDefault  string
 }
 
 func getBodyOfThis(client *http.Client, url string) (string, error) {
@@ -95,7 +96,7 @@ func (ds *DdnsSettings) Ddns() error {
 
 	// TODO: Create a good logic that if the ipadress has not changed, dont try to update
 
-	ds.GandiUpdate(0, "AAAA")
+	ds.GandiUpdateAll()
 
 	//CloudflareUpdate()
 	return nil
