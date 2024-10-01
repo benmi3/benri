@@ -133,19 +133,28 @@ func (ds *DdnsSettings) GandiUpdateAll() string {
 		// TODO: make this logic perfect
 		needUpdate = false
 		payloadFormat := "{\"items\":[\"%s\"]}"
-		if ds.Record[i].A {
+		payloadStr := ""
+		if ds.Record[i].A  && ds.CurrentIPS.ipv4 != ds.Record[i].CurrentIPS.ipv4{
 			needUpdate = true
-			aRecord := fmt.Sprintf("{\"rrset_name\":\"A\",\"rrset_values\":[\"%s\"],\"rrset_ttl\":%d}", ds.CurrentIPS.ipv4, ds.Record[i].Ttl)
+			payloadStr = fmt.Sprintf("{\"rrset_name\":\"A\",\"rrset_values\":[\"%s\"],\"rrset_ttl\":%d}", ds.CurrentIPS.ipv4, ds.Record[i].Ttl)
 
 		}
-		if ds.Record[i].AAAA {
+		if ds.Record[i].AAAA && ds.CurrentIPS.ipv6 != ds.Record[i].CurrentIPS.ipv6{
 			aaaaRecord := fmt.Sprintf("{\"rrset_name\":\"AAAA\",\"rrset_values\":[\"%s\"],\"rrset_ttl\":%d}", ds.CurrentIPS.ipv6, ds.Record[i].Ttl)
 			if !needUpdate {
 				needUpdate = true
+				payloadStr = aaaaRecord
 			} else {
+				payloadStr = append(payloadStr, ",")
+				payloadStr = append(payloadStr, aaaaRecord)
 			}
 		}
-		payloadString := fmt.Sprintf("{\"items\":[\"%s\"]}")
+		payloadString := fmt.Sprintf(payloadFormat, payloadStr)
+		 if needUpdate {
+			// Execute update logic
+			// Else skip and refresh
+		 }
+
 	}
 
 	var rrset_values string
