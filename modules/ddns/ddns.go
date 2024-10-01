@@ -31,6 +31,7 @@ type DdnsSettings struct {
 	RecordCount int8
 	Record      []DnsRecord
 	client      *http.Client
+	AutoCnameCreation bool
 }
 
 func getBodyOfThis(client *http.Client, url string) (string, error) {
@@ -114,7 +115,7 @@ func Test() {
 	// TODO: Create a good logic that if the ipadress has not changed, dont try to update
 
 	ds := new(client)
-	ds.GandiUpdate(1, "A")
+	ds.GandiUpdateAll()
 
 	//CloudflareUpdate()
 

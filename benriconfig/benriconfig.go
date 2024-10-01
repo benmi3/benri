@@ -26,8 +26,31 @@ type T struct {
 	}
 }
 
+type HttpsServer struct {
+	Https       bool
+	CertPath    string
+	PrivKeyPath string
+}
+
+type Authentication struct {
+	Provider     string
+	ProviderType string
+}
+
+type Security struct {
+	Srv  HttpsServer
+	Auth Authentication
+}
+
+type BenriSettings struct {
+	BenriPort   int
+	CaddyAdress string
+	Sec         Security
+}
+
 type Conf struct {
-	Ddns []ddns.DdnsSettings
+	AppSettings BenriSettings
+	Ddns        []ddns.DdnsSettings
 }
 
 func readFile(filename string) ([]byte, error) {

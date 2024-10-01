@@ -72,7 +72,7 @@ func (ds *DdnsSettings) GandiUpdateSingelByType(itemNum int, rrset_type string) 
 	return ds.GandiSingelByType(itemNum, rrset_type, "PUT")
 }
 
-func (ds *DdnsSettings) GandiUpdateMultipleByDomain(domain, payloadString, authToken string) string {
+func (ds *DdnsSettings) GandiUpdateMultipleByDomain(domain, payloadString, authToken string) int {
 	//url := "https://api.gandi.net/v5/livedns/domains/example.com/records"
 	url := fmt.Sprintf("https://api.gandi.net/v5/livedns/domains/%s/records", domain)
 
@@ -92,14 +92,15 @@ func (ds *DdnsSettings) GandiUpdateMultipleByDomain(domain, payloadString, authT
 		// Handle error that actually could happen
 		return "500 Internal ERROR"
 	}
+	return res.StatusCode
 
-	defer res.Body.Close()
-	body, _ := io.ReadAll(res.Body)
+	// defer res.Body.Close()
+	// body, _ := io.ReadAll(res.Body)
 
-	return string(body)
+	// return string(body)
 }
 
-func (ds *DdnsSettings) GandiUpdateAll() string {
+func (ds *DdnsSettings) GandiUpdateAll() (int, error) {
 
 	// 	{
 	//   "items": [
@@ -129,6 +130,8 @@ func (ds *DdnsSettings) GandiUpdateAll() string {
 	// }
 	var needUpdate bool
 
+	authToken := fmt.Sprintf("Bearer %s", ds.AuthKey)
+	
 	for i := 0; i < int(ds.RecordCount); i++ {
 		// TODO: make this logic perfect
 		needUpdate = false
@@ -153,58 +156,25 @@ func (ds *DdnsSettings) GandiUpdateAll() string {
 		 if needUpdate {
 			// Execute update logic
 			// Else skip and refresh
-		 }
+			retStatusCode := GandiUpdateMultipleByDomain(ds.Record[i].Domain, strings.NewReader(payloadString), authToken)
+			if retStatusCode == 200 {
+				// For now, the main logic will be
+				// If the ip in the record is the same as main setting
+				// it has been updated
+				ds.Record[i].CurrentIPS = ds.Record.CurrentIPS
+			} else {
+				// As the domain ips should be checked before we send the update request
+				// There should only be 200 returned
+				// All else needs to be checked and handled
+				// Thats why we return here
+				return i, fmt.Errorf("Unexpeced code returned on index: %d, Code: %d", i, retStatusCode)
+			}
+
+		}
 
 	}
 
-	var rrset_values string
-
-	if ds.Record[itemNum].AAAA {
-		rrset_values = ds.CurrentIPS.ipv6
-	} else if ds.Record[itemNum].A {
-		rrset_values = ds.CurrentIPS.ipv4
-	} else {
-		// Config is not correct
-		// This should not happen here
-		return "500 Internal ERROR"
-	}
-
-	authToken := fmt.Sprintf("Bearer %s", ds.AuthKey)
-
-	payloadString := fmt.Sprintf("{\"rrset_values\":[\"%s\"],\"rrset_ttl\":%d}", rrset_values, ds.Record[itemNum].Ttl)
-
-	payload := strings.NewReader("{\"rrset_name\":\"www\",\"rrset_type\":\"A\",\"rrset_values\":[\"192.0.2.1\"]}")
-
-	payload := strings.NewReader(payloadString)
-
-	req, _ := http.NewRequest("PUT", url, payload)
-
-	// Remember that the new Api tokens in gandi are scoped
-	// This encreases the failure by 403 if mis-configured
-	// So currectly show the user why the request failed
-	req.Header.Add("authorization", authToken)
-	req.Header.Add("content-type", "application/json")
-
-	res, err := ds.client.Do(req)
-	if err != nil {
-		// Handle error that actually could happen
-		return "500 Internal ERROR"
-	}
-
-	defer res.Body.Close()
-	body, _ := io.ReadAll(res.Body)
-
-	if ds.Record[itemNum].AAAA {
-		ds.Record[itemNum].CurrentIPS.ipv6 = ds.CurrentIPS.ipv6
-	} else if ds.Record[itemNum].A {
-		ds.Record[itemNum].CurrentIPS.ipv4 = ds.CurrentIPS.ipv4
-	} else {
-		// Config is not correct
-		// This should not happen here
-		return "500 Internal ERROR"
-	}
-
-	return string(body)
+	return 0, nil
 }
 
 func (ds *DdnsSettings) GandiList() string {
