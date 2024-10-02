@@ -7,28 +7,19 @@ import (
 	"strings"
 )
 
-func (ds *DdnsSettings) GandiSingelByType(itemNum int, rrset_type, method string) string {
+func (ds *DdnsSettings) GandiSingelByType(itemNum int, rrset_type, rrset_value, method string) (int, error) {
 	//Creates a new record. Will raise a 409 conflict if the record already exists, and return a 200 OK if the record already exists with the same values
 	// TODO: item size and itemNum check
+	if itemNum > int(ds.RecordCount) {
+		return 0, fmt.Errorf("Item number does not exist")
+	}
 
 	//url := "https://api.gandi.net/v5/livedns/domains/example.com/records/www/CNAME"
 	url := fmt.Sprintf("https://api.gandi.net/v5/livedns/domains/%s/records/%s/%s", ds.Record[itemNum].Domain, ds.Record[itemNum].Name, rrset_type)
 
-	var rrset_values string
-
-	if ds.Record[itemNum].AAAA {
-		rrset_values = ds.CurrentIPS.ipv6
-	} else if ds.Record[itemNum].A {
-		rrset_values = ds.CurrentIPS.ipv4
-	} else {
-		// Config is not correct
-		// This should not happen here
-		return "500 Internal ERROR"
-	}
-
 	authToken := fmt.Sprintf("Bearer %s", ds.AuthKey)
 
-	payloadString := fmt.Sprintf("{\"rrset_values\":[\"%s\"],\"rrset_ttl\":%d}", rrset_values, ds.Record[itemNum].Ttl)
+	payloadString := fmt.Sprintf("{\"rrset_values\":[\"%s\"],\"rrset_ttl\":%d}", rrset_value, ds.Record[itemNum].Ttl)
 
 	payload := strings.NewReader(payloadString)
 
@@ -43,33 +34,90 @@ func (ds *DdnsSettings) GandiSingelByType(itemNum int, rrset_type, method string
 	res, err := ds.client.Do(req)
 	if err != nil {
 		// Handle error that actually could happen
-		return "500 Internal ERROR"
+		return 0, err
 	}
 
-	defer res.Body.Close()
-	body, _ := io.ReadAll(res.Body)
+	return res.StatusCode, nil
+}
 
-	if ds.Record[itemNum].AAAA {
-		ds.Record[itemNum].CurrentIPS.ipv6 = ds.CurrentIPS.ipv6
-	} else if ds.Record[itemNum].A {
+func (ds *DdnsSettings) GandiCreateSingelByType(itemNum int, rrset_type string) (int, error) {
+	var rrset_value string
+
+	switch rrset_type {
+	case "A":
+		rrset_value = ds.CurrentIPS.ipv4
+		break
+	case "AAAA":
+		rrset_value = ds.CurrentIPS.ipv6
+		break
+	case "CNAME":
+		rrset_value = ds.Record[itemNum].CNAME
+		break
+	default:
+		return 0, fmt.Errorf("Unsupported record type was set")
+	}
+	reCode, err := ds.GandiSingelByType(itemNum, rrset_type, rrset_value, "POST")
+
+	if err != nil || reCode != 200 {
+		return reCode, err
+	}
+
+	switch rrset_type {
+	case "A":
 		ds.Record[itemNum].CurrentIPS.ipv4 = ds.CurrentIPS.ipv4
-	} else {
-		// Config is not correct
-		// This should not happen here
-		return "500 Internal ERROR"
+		break
+	case "AAAA":
+		ds.Record[itemNum].CurrentIPS.ipv6 = ds.CurrentIPS.ipv6
+		break
+	case "CNAME":
+		break
+	default:
+		break
+
 	}
 
-	return string(body)
+	return 0, nil
+
 }
 
-func (ds *DdnsSettings) GandiCreateSingelByType(itemNum int, rrset_type string) string {
+func (ds *DdnsSettings) GandiUpdateSingelByType(itemNum int, rrset_type string) (int, error) {
 
-	return ds.GandiSingelByType(itemNum, rrset_type, "POST")
-}
+	var rrset_value string
 
-func (ds *DdnsSettings) GandiUpdateSingelByType(itemNum int, rrset_type string) string {
+	switch rrset_type {
+	case "A":
+		rrset_value = ds.CurrentIPS.ipv4
+		break
+	case "AAAA":
+		rrset_value = ds.CurrentIPS.ipv6
+		break
+	case "CNAME":
+		rrset_value = ds.Record[itemNum].CNAME
+		break
+	default:
+		return 0, fmt.Errorf("Unsupported record type was set")
+	}
+	reCode, err := ds.GandiSingelByType(itemNum, rrset_type, rrset_value, "PUT")
 
-	return ds.GandiSingelByType(itemNum, rrset_type, "PUT")
+	if err != nil || reCode != 200 {
+		return reCode, err
+	}
+
+	switch rrset_type {
+	case "A":
+		ds.Record[itemNum].CurrentIPS.ipv4 = ds.CurrentIPS.ipv4
+		break
+	case "AAAA":
+		ds.Record[itemNum].CurrentIPS.ipv6 = ds.CurrentIPS.ipv6
+		break
+	case "CNAME":
+		break
+	default:
+		break
+
+	}
+
+	return 0, nil
 }
 
 func (ds *DdnsSettings) GandiUpdateMultipleByDomain(domain, payloadString, authToken string) (int, error) {
@@ -159,8 +207,12 @@ func (ds *DdnsSettings) GandiUpdateAll() (int, error) {
 		if needUpdate {
 			// Execute update logic
 			// Else skip and refresh
-			payload := strings.NewReader(payloadString)
-			retStatusCode, err := ds.GandiUpdateMultipleByDomain(ds.Record[i].Domain, payload, authToken)
+			retStatusCode, err := ds.GandiUpdateMultipleByDomain(ds.Record[i].Domain, payloadString, authToken)
+			if err != nil {
+				// This error would be errors creating, sending or reciving requests
+				// And have nothing to do with the http statusCode
+				return i, err
+			}
 			if retStatusCode == 200 {
 				// For now, the main logic will be
 				// If the ip in the record is the same as main setting
