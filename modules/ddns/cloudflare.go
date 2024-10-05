@@ -19,7 +19,10 @@ func CloudflareUpdate() {
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("X-Auth-Email", "")
 
-	res, _ := http.DefaultClient.Do(req)
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		// Handle error
+	}
 
 	defer res.Body.Close()
 	body, _ := io.ReadAll(res.Body)
@@ -38,7 +41,10 @@ func CloudflareList() {
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("X-Auth-Email", "")
 
-	res, _ := http.DefaultClient.Do(req)
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		// Handle error
+	}
 
 	defer res.Body.Close()
 	body, _ := io.ReadAll(res.Body)

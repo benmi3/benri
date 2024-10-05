@@ -7,23 +7,20 @@ import (
 	"strings"
 )
 
-func (ds *DdnsSettings) GandiSingelByType(itemNum int, rrset_type, rrset_value, method string) (int, error) {
-	//Creates a new record. Will raise a 409 conflict if the record already exists, and return a 200 OK if the record already exists with the same values
-	// TODO: item size and itemNum check
-	if itemNum > int(ds.RecordCount) {
-		return 0, fmt.Errorf("Item number does not exist")
-	}
-
+func (dnsRec *DnsRecord) generateGandiSingelByType(AuthKey, rrset_type, rrset_value, method string) (*http.Request, error) {
 	//url := "https://api.gandi.net/v5/livedns/domains/example.com/records/www/CNAME"
-	url := fmt.Sprintf("https://api.gandi.net/v5/livedns/domains/%s/records/%s/%s", ds.Record[itemNum].Domain, ds.Record[itemNum].Name, rrset_type)
+	url := fmt.Sprintf("https://api.gandi.net/v5/livedns/domains/%s/records/%s/%s", dnsRec.Domain, dnsRec.Name, rrset_type)
 
-	authToken := fmt.Sprintf("Bearer %s", ds.AuthKey)
+	authToken := fmt.Sprintf("Bearer %s", AuthKey)
 
-	payloadString := fmt.Sprintf("{\"rrset_values\":[\"%s\"],\"rrset_ttl\":%d}", rrset_value, ds.Record[itemNum].Ttl)
+	payloadString := fmt.Sprintf("{\"rrset_values\":[\"%s\"],\"rrset_ttl\":%d}", rrset_value, dnsRec.Ttl)
 
 	payload := strings.NewReader(payloadString)
 
-	req, _ := http.NewRequest(method, url, payload)
+	req, err := http.NewRequest(method, url, payload)
+	if err != nil {
+		return nil, err
+	}
 
 	// Remember that the new Api tokens in gandi are scoped
 	// This encreases the failure by 403 if mis-configured
@@ -31,13 +28,7 @@ func (ds *DdnsSettings) GandiSingelByType(itemNum int, rrset_type, rrset_value, 
 	req.Header.Add("authorization", authToken)
 	req.Header.Add("content-type", "application/json")
 
-	res, err := ds.client.Do(req)
-	if err != nil {
-		// Handle error that actually could happen
-		return 0, err
-	}
-
-	return res.StatusCode, nil
+	return req, nil
 }
 
 func (ds *DdnsSettings) GandiCreateSingelByType(itemNum int, rrset_type string) (int, error) {
@@ -56,10 +47,19 @@ func (ds *DdnsSettings) GandiCreateSingelByType(itemNum int, rrset_type string) 
 	default:
 		return 0, fmt.Errorf("Unsupported record type was set")
 	}
-	reCode, err := ds.GandiSingelByType(itemNum, rrset_type, rrset_value, "POST")
+	req, err := ds.Record[itemNum].generateGandiSingelByType(ds.AuthKey, rrset_type, rrset_value, "POST")
+	if err != nil {
+		return 0, err
+	}
 
-	if err != nil || reCode != 200 {
-		return reCode, err
+	res, err := ds.client.Do(req)
+	if err != nil {
+		return 0, err
+	}
+
+	reCode := res.StatusCode
+	if reCode != 200 {
+		return reCode, nil
 	}
 
 	switch rrset_type {
@@ -97,10 +97,19 @@ func (ds *DdnsSettings) GandiUpdateSingelByType(itemNum int, rrset_type string) 
 	default:
 		return 0, fmt.Errorf("Unsupported record type was set")
 	}
-	reCode, err := ds.GandiSingelByType(itemNum, rrset_type, rrset_value, "PUT")
+	req, err := ds.Record[itemNum].generateGandiSingelByType(ds.AuthKey, rrset_type, rrset_value, "POST")
+	if err != nil {
+		return 0, err
+	}
 
-	if err != nil || reCode != 200 {
-		return reCode, err
+	res, err := ds.client.Do(req)
+	if err != nil {
+		return 0, err
+	}
+
+	reCode := res.StatusCode
+	if reCode != 200 {
+		return reCode, nil
 	}
 
 	switch rrset_type {
