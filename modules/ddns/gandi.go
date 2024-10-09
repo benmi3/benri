@@ -8,7 +8,7 @@ import (
 )
 
 func (dnsRec *DnsRecord) generateGandiSingelByType(AuthKey, rrset_type, rrset_value, method string) (*http.Request, error) {
-	//url := "https://api.gandi.net/v5/livedns/domains/example.com/records/www/CNAME"
+	// url := "https://api.gandi.net/v5/livedns/domains/example.com/records/www/CNAME"
 	url := fmt.Sprintf("https://api.gandi.net/v5/livedns/domains/%s/records/%s/%s", dnsRec.Domain, dnsRec.Name, rrset_type)
 
 	authToken := fmt.Sprintf("Bearer %s", AuthKey)
@@ -37,13 +37,10 @@ func (ds *DdnsSettings) GandiCreateSingelByType(itemNum int, rrset_type string) 
 	switch rrset_type {
 	case "A":
 		rrset_value = ds.CurrentIPS.ipv4
-		break
 	case "AAAA":
 		rrset_value = ds.CurrentIPS.ipv6
-		break
 	case "CNAME":
 		rrset_value = ds.Record[itemNum].CNAME
-		break
 	default:
 		return 0, fmt.Errorf("Unsupported record type was set")
 	}
@@ -65,10 +62,8 @@ func (ds *DdnsSettings) GandiCreateSingelByType(itemNum int, rrset_type string) 
 	switch rrset_type {
 	case "A":
 		ds.Record[itemNum].CurrentIPS.ipv4 = ds.CurrentIPS.ipv4
-		break
 	case "AAAA":
 		ds.Record[itemNum].CurrentIPS.ipv6 = ds.CurrentIPS.ipv6
-		break
 	case "CNAME":
 		break
 	default:
@@ -77,23 +72,18 @@ func (ds *DdnsSettings) GandiCreateSingelByType(itemNum int, rrset_type string) 
 	}
 
 	return 0, nil
-
 }
 
 func (ds *DdnsSettings) GandiUpdateSingelByType(itemNum int, rrset_type string) (int, error) {
-
 	var rrset_value string
 
 	switch rrset_type {
 	case "A":
 		rrset_value = ds.CurrentIPS.ipv4
-		break
 	case "AAAA":
 		rrset_value = ds.CurrentIPS.ipv6
-		break
 	case "CNAME":
 		rrset_value = ds.Record[itemNum].CNAME
-		break
 	default:
 		return 0, fmt.Errorf("Unsupported record type was set")
 	}
@@ -115,10 +105,8 @@ func (ds *DdnsSettings) GandiUpdateSingelByType(itemNum int, rrset_type string) 
 	switch rrset_type {
 	case "A":
 		ds.Record[itemNum].CurrentIPS.ipv4 = ds.CurrentIPS.ipv4
-		break
 	case "AAAA":
 		ds.Record[itemNum].CurrentIPS.ipv6 = ds.CurrentIPS.ipv6
-		break
 	case "CNAME":
 		break
 	default:
@@ -130,7 +118,7 @@ func (ds *DdnsSettings) GandiUpdateSingelByType(itemNum int, rrset_type string) 
 }
 
 func (ds *DdnsSettings) GandiUpdateMultipleByDomain(domain, payloadString, authToken string) (int, error) {
-	//url := "https://api.gandi.net/v5/livedns/domains/example.com/records"
+	// url := "https://api.gandi.net/v5/livedns/domains/example.com/records"
 	url := fmt.Sprintf("https://api.gandi.net/v5/livedns/domains/%s/records", domain)
 
 	payload := strings.NewReader(payloadString)
@@ -161,7 +149,6 @@ func (ds *DdnsSettings) GandiUpdateMultipleByDomain(domain, payloadString, authT
 }
 
 func (ds *DdnsSettings) GandiUpdateAll() (int, error) {
-
 	// 	{
 	//   "items": [
 	//     {
@@ -243,7 +230,6 @@ func (ds *DdnsSettings) GandiUpdateAll() (int, error) {
 }
 
 func (ds *DdnsSettings) GandiList() string {
-
 	url := "https://api.gandi.net/v5/livedns/domains/example.com/records"
 	// There should be no way that the request should error
 	req, _ := http.NewRequest("GET", url, nil)
