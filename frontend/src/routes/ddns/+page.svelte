@@ -1,10 +1,15 @@
+<script>
+	import Loading from '../../lib/components/Loader.svelte';
+	import DdnsRecord from '../../lib/components/DdnsItem.svelte';
+</script>
+
 <svelte:head>
-	<title>About</title>
+	<title>Ddns</title>
 	<meta name="description" content="About this app" />
 </svelte:head>
 
 <div class="text-column">
-	<h1>About this app</h1>
+	<h1>Ddns manager</h1>
 
 	<p>
 		This is a <a href="https://kit.svelte.dev">SvelteKit</a> app. You can make your own by typing the
@@ -23,4 +28,11 @@
 		The <a href="/sverdle">Sverdle</a> page illustrates SvelteKit's data loading and form handling. Try
 		using it with JavaScript disabled!
 	</p>
+
+	<Loading />
+	<DdnsRecord>
+		<span slot="name"> auth </span>
+		<span slot="domain"> test.example </span>
+		<span slot="cname"> test.example </span>
+	</DdnsRecord>
 </div>
