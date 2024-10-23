@@ -1,3 +1,34 @@
+<script lang="ts">
+	let label = '';
+	let cname = '';
+	let ipv4 = '';
+	let ipv6 = '';
+	let lastUpdated = new Date().toLocaleString();
+
+	//let { src, title, composer, performer } = $props();
+	let isEditing = false;
+	function toggleEdit() {
+		isEditing = !isEditing;
+	}
+
+	function handleSave(event: { target: { value: string } }) {
+		label = event.target.value;
+		isEditing = false;
+	}
+	function updateTimestamp() {
+		lastUpdated = new Date().toLocaleString();
+	}
+
+	function updateData() {
+		updateTimestamp();
+		// Implement the logic to update data here
+	}
+
+	function createData() {
+		// Implement the logic to create data here
+	}
+</script>
+
 <article class="ddns-card">
 	<h2>
 		<p>
@@ -45,6 +76,27 @@
 			</p>
 		</div>
 	{/if}
+	<div>
+		<input type="text" bind:value={label} placeholder="Label" />
+		<button on:click={createData}>Create</button>
+		<button on:click={updateData}>Update</button>
+
+		{#if isEditing}
+			<label for="cnameinput">CName:</label>
+			<input id="cnameinput" type="text" bind:value={cname} on:blur={handleSave} />
+			<button on:click={toggleEdit}> Update</button>
+		{:else}
+			<p>CName: {cname}<button on:click={toggleEdit}> Update</button></p>
+		{/if}
+		<p>IPv4: {ipv4}</p>
+		<p>IPv6: {ipv6}</p>
+		<p>
+			Last Updated:
+			<motion:p animate={{ opacity: 1, y: 0 }} transition={{ duration: 1 }}>
+				{lastUpdated}
+			</motion:p>
+		</p>
+	</div>
 </article>
 
 <style>
