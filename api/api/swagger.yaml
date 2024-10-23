@@ -1,0 +1,69 @@
+openapi: 3.0.0
+info:
+  title: Dynamic DNS API
+  version: 1.0.0
+servers:
+- url: https://virtserver.swaggerhub.com/SWAGGER_168/benri/1.0.0
+  description: SwaggerHub API Auto Mocking
+tags:
+- name: Users
+  description: Operations related to users
+paths:
+  /ddns:
+    get:
+      tags:
+      - Users
+      summary: Get list of entries
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DdnsEntry'
+                x-content-type: application/json
+    put:
+      tags:
+      - Users
+      summary: Update an existing entry
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DdnsEntry'
+      responses:
+        "200":
+          description: Entry updated
+    post:
+      tags:
+      - Users
+      summary: Create a new entry
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DdnsEntry'
+      responses:
+        "201":
+          description: Entry created
+    delete:
+      tags:
+      - Users
+      summary: Delete an entry
+      responses:
+        "204":
+          description: Entry deleted
+components:
+  schemas:
+    DdnsEntry:
+      type: object
+      properties:
+        hostname:
+          type: string
+        ip_address:
+          type: string
+      example:
+        hostname: hostname
+        ip_address: ip_address
